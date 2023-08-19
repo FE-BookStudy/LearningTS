@@ -258,3 +258,100 @@ withSchoolBus({
 });
 //Error: Type 'number' is not assignable to type 'string[]'.
 ```
+
+## 6. 추상 클래스
+
+- 메서드의 구현을 선언하지 않고, 대신 하위 클래스가 해당 메서드를 제공할 것을 **예상**하고 기본 클래스를 만드는 방법
+- 추상화하려는 클래스 이름과 메서드 앞에 타입스크립트 `abstract` 키워드 추가
+- 이러한 추상화 메서드 선언은 추상화 기본 클래스에서 메서드의 본문을 제공하는 것을 건너뛰고, 대신 인터페이스와 동일한 방식으로 선언된다.
+
+```tsx
+abstract class School {
+  readonly name: string;
+
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  abstract getStudentTypes(): string[];
+}
+
+class Preschool extends School {
+  getStudentTypes() {
+    return ['preschooler'];
+  }
+}
+
+class Absence extends School {}
+//Error: Non-abstract class 'Absence'
+//does not implement all abstract members of 'School'
+```
+
+- School 클래스와 getStudentTypes 메서드는 abstract로 표시된다.
+- 그러므로 하위 클래스인 Preschool과 Absence는 getStudentTypes를 구현해야 한다.
+
+```tsx
+let school: School;
+
+school = new Preschool('hi'); //Ok
+
+school = new School('what');
+//Error: Cannot create an instance of an abstract class.
+```
+
+- 구현이 존재한다고 가정할 수 있는 일부 메서드에 대한 정의가 없기 때문에 추상 클래스를 직접 인스턴스화할 수 없다. → 추상 클래스가 아닌 클래스만 인스턴스화할 수 있다.
+- 따라서 추상 클래스는 클래스의 세부 사항이 채워질 거라 예상되는 프레임워크에서 자주 사용된다.
+
+## 7. 멤버 접근성
+
+`In JS`
+
+- 클래스 멤버 이름 앞에 `#`을 추가해 private 클래스 멤버로 지정한다.
+- private 클래스 멤버는 해당 클래스 인스턴스에서만 접근 가능
+- 자바스크립트 런타임 → 클래스 외부 코드 영역에서 private 메서드나 속성에 접근 시 오류 발생시켜 프라이버시 강화
+
+`In TS`
+
+- 타입스크립트의 클래스 지원은 자바스크립트늬 `#`보다 먼저 만들어졌다.
+- private 클래스 멤버를 지원하지만 타입시스템에만 존재하는 클래스 메서드와 속성이 있다.
+- 타입스크립트의 멤버 접근성(가시성)은 클래스 멤버의 선언 이름 앞에 다음 키워드 하나를 추가해 만든다.
+  | public(기본값) | 모든 곳에서 누구나 접근 가능                 |
+  | -------------- | -------------------------------------------- |
+  | protected      | 클래스 내부 또는 하위 클래스에서만 접근 가능 |
+  | private        | 클래스 내부에서만 접근 가능                  |
+- 순수하게 타입 시스템 내에 존재하며, 코드가 자바스크립트로 컴파일되면 다른 모든 타입 시스템 구문과 함께 키워드도 제거된다.
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/718f0ea2-f20e-4146-bdf6-033cb6e53250/Untitled.png)
+
+- protected 또는 private으로 선언된 타입스크립트 클래스 멤버는 명시적으로 또는 암묵적으로 public으로 선언된 것처럼 동일한 자바스크립트 코드로 컴파일된다.
+- 자바스크립트 런타임에서는 # private 필드만 진정한 private이다.
+
+### 정적 필드 제한자
+
+- 자바스크립트는 `static` 키워드를 사용해 클래스 자체에서 멤버를 선언한다.
+- 타입스크립트는 `static` 키워드를 단독으로 사용하거나 readonly와 접근성 키워드를 함께 사용할 수 있도록 지원한다.
+  - 접근성 키워드를 먼저 작성하고, 그 다음 static, readonly 키워드 순
+
+```tsx
+class Question {
+  protected static readonly answer: 'bash';
+  protected static readonly prompt =
+    "What's an ogre's favorite programming language?";
+
+  guess(getAnswer: (prompt: string) => string) {
+    const answer = getAnswer(Question.prompt);
+
+    // Ok
+    if (answer === Question.answer) {
+      console.log('You got it!');
+    } else {
+      console.log('Try again...');
+    }
+  }
+}
+
+Question.answer;
+//Error: Property 'answer' does not exist on type 'typeof Question'.
+```
+
+- 해당 필드가 해당 클래스 외부에서 접근되거나 수정되는 것을 제한하는 데 유용하다.
